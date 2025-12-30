@@ -116,7 +116,6 @@ app.post('/tasks', (req, res) => {
     return res.status(400).json({ error: validation.message });
   }
   
-  // Generate new ID (get max ID and add 1)
   const maxId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0;
   const newTask = {
     id: maxId + 1,
@@ -140,21 +139,21 @@ app.put('/tasks/:id', (req, res) => {
     return res.status(404).json({ error: 'Task not found' });
   }
   
-  // Validate that all required fields are present and valid
-  const validation = validateTask(req.body, true);
+  // Validate only the provided fields (allows partial updates)
+  const validation = validateTask(req.body, false);
   
   if (!validation.valid) {
     return res.status(400).json({ error: validation.message });
   }
   
-  // Preserve createdAt if it exists, otherwise set to current time
+  // Merge provided fields with existing task
   const existingTask = tasks[taskIndex];
   tasks[taskIndex] = {
     id: id,
-    title: req.body.title,
-    description: req.body.description,
-    completed: req.body.completed,
-    priority: req.body.priority || existingTask.priority || 'medium',
+    title: req.body.title !== undefined ? req.body.title : existingTask.title,
+    description: req.body.description !== undefined ? req.body.description : existingTask.description,
+    completed: req.body.completed !== undefined ? req.body.completed : existingTask.completed,
+    priority: req.body.priority !== undefined ? req.body.priority : existingTask.priority || 'medium',
     createdAt: existingTask.createdAt || new Date().toISOString()
   };
   
